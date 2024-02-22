@@ -1,0 +1,55 @@
+import express from 'express';
+import { PORT, MongoURL } from "./config.js";
+import mongoose from 'mongoose';
+import { Book } from './models/bookModel.js';
+
+const app = express();
+
+app.use(express.json());
+
+app.get('/', (req, res) => {
+    console.log('GET request received');
+    return res.send('Hello World');
+});
+
+app.post('/books', async (req, res) => {
+    try {
+        if (!req.body.title || !req.body.author || !req.body.publishYear) {
+            return res.status(400).send({
+                message: 'All fields are required',
+            });
+        }
+        const newBook = {
+            title: req.body.title,
+            author: req.body.author,
+            publishYear: req.body.publishYear,
+        };
+
+        const book = await Book.create(newBook);
+        return res.status(201).json(book);
+    } catch (error) {
+        console.log('Error', error);
+        return res.status(500).send('Internal Server Error');
+    }
+});
+
+app.get('/books', async (req, res) => {
+    try {
+        const books = await Book.find({});
+        return res.status(200).json(books);
+    } catch (error) {
+        console.log('Error', error);
+        return res.status(500).send('Internal Server Error');
+    }
+});
+
+mongoose.connect(MongoURL)
+    .then(() => {
+        console.log('Connected to MongoDB');
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    })
+    .catch((error) => {
+        console.log('Error connecting to MongoDB', error);
+    });
